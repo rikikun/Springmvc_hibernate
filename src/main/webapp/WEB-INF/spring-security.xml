@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:security="http://www.springframework.org/schema/security"
+	xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+           http://www.springframework.org/schema/security
+           http://www.springframework.org/schema/security/spring-security-3.1.xsd">
+
+<bean id="webExpressionHandler" class="org.springframework.security.web.access.expression.DefaultWebSecurityExpressionHandler">
+  <property name="roleHierarchy" ref="roleHierarchy"/>
+</bean>
+
+<bean id="expressionHandler" class="org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler">
+  <property name="roleHierarchy" ref="roleHierarchy"/>
+</bean>
+
+	<security:http pattern="/resources/**" security="none" />
+	<security:http pattern="/login" security="none" />
+	<security:http auto-config='true' access-decision-manager-ref="accessDecisionManager" use-expressions="true">
+        <security:intercept-url pattern="/resources/**" access="permitAll" />
+        <security:intercept-url pattern="/**" access="permitAll"/>
+        <security:intercept-url pattern="/user/**" access="hasRole('ROLE_USER')" />
+		<security:intercept-url pattern="/admin/**" access="hasRole('ROLE_ADMIN')" />
+		<security:form-login login-page="/login"
+                             default-target-url="/welcome" />
+	</security:http>
+
+	<security:authentication-manager>
+		<!-- <security:authentication-provider> -->
+		<!-- <security:user-service> -->
+		<!-- <security:user name="rikikun" password="1234" -->
+		<!-- authorities="ROLE_USER, -->
+		<!-- ROLE_ADMIN" /> -->
+		<!-- <security:user name="bob" password="bobspassword" -->
+		<!-- authorities="ROLE_USER" /> -->
+		<!-- </security:user-service> -->
+		<!-- </security:authentication-provider> -->
+		<security:authentication-provider
+			user-service-ref="userDetailServiceImpl"></security:authentication-provider>
+	</security:authentication-manager>
+
+<bean id="accessDecisionManager" class="org.springframework.security.access.vote.AffirmativeBased">
+  <constructor-arg>
+    <list>
+      <ref bean="roleVoter" />
+      <bean class="org.springframework.security.web.access.expression.WebExpressionVoter">
+        <property name="expressionHandler" ref="webExpressionHandler"/>
+      </bean>
+      <bean class="org.springframework.security.access.vote.AuthenticatedVoter"/>
+    </list>
+  </constructor-arg>
+</bean>
+
+	<bean id="roleVoter"
+		class="org.springframework.security.access.vote.RoleHierarchyVoter">
+		<constructor-arg ref="roleHierarchy" />
+	</bean>
+
+	<bean id="roleHierarchy"
+		class="org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl">
+		<property name="hierarchy">
+			<value>
+				ROLE_ADMIN > ROLE_USER
+                ROLE_USER > ROLE_GUST
+			</value>
+		</property>
+	</bean>
+
+</beans>
